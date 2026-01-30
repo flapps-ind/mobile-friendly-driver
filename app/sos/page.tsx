@@ -8,6 +8,10 @@ import { HospitalList } from "@/components/emergency/hospital-list"
 import type { UserLocation, Hospital, Ambulance } from "@/lib/emergency-types"
 import { Activity, AlertCircle, Map, Users, Zap, Phone, Navigation } from "lucide-react"
 
+const EMERGENCY_API_URL = "https://localhost:3000/api/emergency";
+
+
+
 export default function EmergencyPage() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -19,6 +23,33 @@ export default function EmergencyPage() {
   const [locationError, setLocationError] = useState<string | null>(null)
   const [showMap, setShowMap] = useState(false)
   const [dataSource, setDataSource] = useState<string>("")
+
+
+    // Send live location to emergency API
+  const sendLocationToAPI = async (location: UserLocation) => {
+    try {
+      await fetch("http://localhost:3000/api/emergency", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }),
+      })
+
+      console.log(
+        "[SOS] Location sent →",
+        location.latitude,
+        location.longitude
+      )
+    } catch (error) {
+      console.error("[SOS] Failed to send location", error)
+    }
+  }
+
+
 
   // Get user's current location with high accuracy
   const getCurrentLocation = useCallback((): Promise<UserLocation> => {
@@ -125,6 +156,7 @@ export default function EmergencyPage() {
       // Get current location
       const location = await getCurrentLocation()
       setUserLocation(location)
+      await sendLocationToAPI(location)
       setShowMap(true)
 
       // Fetch nearby hospitals (sorted by distance on server)
@@ -176,6 +208,7 @@ export default function EmergencyPage() {
           address: userLocation?.address,
         }
         setUserLocation(location)
+        sendLocationToAPI(location)
       },
       (error) => {
         console.log("[v0] Watch position error:", error)
